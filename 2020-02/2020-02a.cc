@@ -28,7 +28,6 @@ int CountValidPasswords(std::string file_name) {
         int occurrences = std::count(password.begin(), password.end(), char_string[0]);
 
         if (min <= occurrences && occurrences <= max) {
-            std::cout << password << std::endl;
             ++valid_passwords;
         }
     }
