@@ -76,19 +76,13 @@ std::unique_ptr<LuggageGraph> ParseLuggageGraph(const std::string& filename) {
     return luggage_graph;
 }
 
-int CountSubtreeSize(std::string bag_name, std::unordered_set<std::string>& seen, LuggageGraph* graph) {
+int CountNumberOfBags(std::string bag_name, LuggageGraph* graph) {
     int total = 1;
     for (const auto [count, child] : graph->GetBag(bag_name)->contents) {
-        int subtree_size = CountSubtreeSize(child->name, seen, graph);
+        int subtree_size = CountNumberOfBags(child->name, graph);
         total += count * subtree_size;
     }
     return total;
-}
-
-int CountPossibleContainers(std::string bag_name, std::unique_ptr<LuggageGraph> graph) {
-    std::unordered_set<std::string> seen;
-
-    return CountSubtreeSize(bag_name, seen, graph.get()) - 1;
 }
 
 
@@ -99,6 +93,6 @@ int main(int argc, char* argv[]) {
     }
 
     auto graph = ParseLuggageGraph(std::string(argv[1]));
-    int container_count = CountPossibleContainers("shiny gold", std::move(graph));
+    int container_count = CountNumberOfBags("shiny gold", graph.get()) - 1;
     std::cout << "Number of child bags: " << container_count << std::endl;
 }
