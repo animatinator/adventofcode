@@ -7,6 +7,18 @@
 #include <vector>
 
 
+std::vector<long long> ReadInput(std::string filename) {
+    std::vector<long long> result;
+    std::ifstream infile(filename);
+    long long current;
+
+    while (infile >> current) {
+        result.push_back(current);
+    }
+
+    return result;
+}
+
 bool ContainsNumbersSummingTo(std::vector<long long> vec, long long value) {
     int l = 0;
     int r = vec.size() - 1;
@@ -26,14 +38,11 @@ bool ContainsNumbersSummingTo(std::vector<long long> vec, long long value) {
     return true;
 }
 
-long long FindIncorrectNumber(std::string filename, int pre_length) {
+long long FindIncorrectNumber(const std::vector<long long>& input, int pre_length) {
     std::queue<long long> recent_numbers;
     std::vector<long long> sorted_recent_numbers;
 
-    std::ifstream infile(filename);
-    long long current;
-
-    while (infile >> current) {
+    for (long long current : input) {
         if (recent_numbers.size() < pre_length) {
             // Still processing the preamble.
             recent_numbers.push(current);
@@ -63,6 +72,33 @@ long long FindIncorrectNumber(std::string filename, int pre_length) {
     throw std::runtime_error("No incorrect number found in the input sequence!");
 }
 
+std::vector<long long> FindContiguousNumbersWithSum(const std::vector<long long>& input, long long target) {
+    int l = 0;
+    int r = 0;
+    long long sum = input.at(0);
+
+    while ((sum != target || r - l < 1) && r < input.size()) {
+        if (sum < target) {
+            ++r;
+            sum += input.at(r);
+        } else if (sum > target) {
+            sum -= input.at(l);
+            ++l;
+        }
+        if (l > r) {
+            throw std::runtime_error("Indices crossed whilst finding contiguous numbers with sum!");
+        }
+    }
+
+    return std::vector<long long>(input.begin() + l, input.begin() + r + 1);
+}
+
+long long ComputeEncryptionWeakness(const std::vector<long long>& input, long long incorrect_number) {
+    std::vector<long long> contiguous_sum_range = FindContiguousNumbersWithSum(input, incorrect_number);
+    return *std::min_element(contiguous_sum_range.begin(), contiguous_sum_range.end())
+        + *std::max_element(contiguous_sum_range.begin(), contiguous_sum_range.end());
+}
+
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
@@ -70,6 +106,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    long long incorrect_number = FindIncorrectNumber(std::string(argv[1]), std::stoi(argv[2]));
+    std::vector<long long> input = ReadInput(std::string(argv[1]));
+    long long incorrect_number = FindIncorrectNumber(input, std::stoi(argv[2]));
+    long long encryption_weakness = ComputeEncryptionWeakness(input, incorrect_number);
     std::cout << "Incorrect number in sequence: " << incorrect_number << std::endl;
+    std::cout << "Encryption weakness: " << encryption_weakness << std::endl;
 }
