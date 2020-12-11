@@ -20,11 +20,6 @@ enum Direction {
     UPLEFT = 7
 };
 
-// TODO(DO NOT SUBMIT): Remove?
-/*const Direction kDirections[] = {
-    Direction::UP, Direction::UPRIGHT, Direction::RIGHT, Direction::DOWNRIGHT,
-    Direction::DOWN, Direction::DOWNLEFT, Direction::LEFT, Direction::UPLEFT};*/
-
 const std::unordered_map<Direction, std::pair<int, int>> kDirectionsMap = {
     {Direction::UP, {0, -1}},
     {Direction::UPRIGHT, {1, -1}},
@@ -59,48 +54,53 @@ std::string CreateInputTileErrorMessage(char tile) {
     return stream.str();
 }
 
+bool IsTile(const std::vector<std::vector<Tile>>& input, int x, int y, TileType type) {
+    if (x >= 0 && x < input.at(0).size() && y >= 0 && y < input.size()) {
+        return input.at(y).at(x).type == type;
+    }
+    return false;
+}
+
+bool IsChair(std::vector<std::vector<Tile>>& grid, int x, int y) {
+    return IsTile(grid, x, y, TileType::CHAIR);
+}
+
+int GetDistanceToNearestChairInDirection(std::vector<std::vector<Tile>>& grid, int x, int y, Direction direction) {
+    const auto [dx, dy] = kDirectionsMap.at(direction);
+    int target_x = x + dx;
+    int target_y = y + dy;
+    if (target_x >= 0 && target_x < grid.at(0).size() && target_y >= 0 && target_y < grid.size()) {
+        return IsChair(grid, target_x, target_y) ? 1 : grid.at(target_y).at(target_x).nearest_chair[direction] + 1;
+    }
+    return 1;
+}
+
 void SetNearestNeighbourChairs(std::vector<std::vector<Tile>>& grid) {
     // Start out with every grid square looking at its immediate neighbours.
     for (int x = 0; x < grid.at(0).size(); ++x) {
         for (int y = 0; y < grid.size(); ++y) {
             for (const auto& [direction, offset] : kDirectionsMap) {
-                grid.at(y).at(x).nearest_chair[direction] = 1;
+                grid.at(y).at(x).nearest_chair[direction] = 1000;
             }
         }
     }
 
     // Top-left to bottom-right pass looking for left, topleft, top and topright nearest chairs.
-    for (int x = 1; x < grid.at(0).size(); ++x) {
-        for (int y = 1; y < grid.size(); ++y) {
-            for (const auto& direction : {Direction::LEFT, Direction::UPLEFT, Direction::UP}) {
-                const auto [dx, dy] = kDirectionsMap.at(direction);
+    for (int y = 0; y < grid.size(); ++y) {
+        for (int x = 0; x < grid.at(0).size(); ++x) {
+            for (const auto& direction : {Direction::LEFT, Direction::UPLEFT, Direction::UP, Direction::UPRIGHT}) {
                 grid.at(y).at(x).nearest_chair[direction] =
-                    (grid.at(y+dy).at(x+dx).type == TileType::CHAIR) ? 1 : grid.at(y+dy).at(x+dx).nearest_chair[direction] + 1;
-            }
-            // Hackily handle UPRIGHT separately.
-            if (x < grid.at(0).size() - 1) {
-                const Direction direction = Direction::UPRIGHT;
-                const auto [dx, dy] = kDirectionsMap.at(direction);
-                grid.at(y).at(x).nearest_chair[direction] =
-                    (grid.at(y+dy).at(x+dx).type == TileType::CHAIR) ? 1 : grid.at(y+dy).at(x+dx).nearest_chair[direction] + 1;
+                    GetDistanceToNearestChairInDirection(grid, x, y, direction);
             }
         }
     }
 
     // Bottom-right to top-left pass looking for right, downright, down and downleft nearest chairs.
-    for (int x = grid.at(0).size() - 2; x >= 0; --x) {
-        for (int y = grid.size() - 2; y >= 0; --y) {
-            for (const auto& direction : {Direction::RIGHT, Direction::DOWNRIGHT, Direction::DOWN}) {
-                const auto [dx, dy] = kDirectionsMap.at(direction);
+    for (int y = grid.size() - 1; y >= 0; --y) {
+        for (int x = grid.at(0).size() - 1; x >= 0; --x) {
+            for (const auto& direction : {Direction::RIGHT, Direction::DOWNRIGHT, Direction::DOWN, Direction::DOWNLEFT}) {
                 grid.at(y).at(x).nearest_chair[direction] =
-                    (grid.at(y+dy).at(x+dx).type == TileType::CHAIR) ? 1 : grid.at(y+dy).at(x+dx).nearest_chair[direction] + 1;
-            }
-            // Hackily handle DOWNLEFT separately.
-            if (x > 0) {
-                const Direction direction = Direction::DOWNLEFT;
-                const auto [dx, dy] = kDirectionsMap.at(direction);
-                grid.at(y).at(x).nearest_chair[direction] =
-                    (grid.at(y+dy).at(x+dx).type == TileType::CHAIR) ? 1 : grid.at(y+dy).at(x+dx).nearest_chair[direction] + 1;
+                    GetDistanceToNearestChairInDirection(grid, x, y, direction);
             }
         }
     }
@@ -139,13 +139,11 @@ std::vector<std::vector<Tile>> ParseGrid(std::string filename) {
 }
 
 bool IsFullChair(const std::vector<std::vector<Tile>>& input, int x, int y) {
-    if (x >= 0 && x < input.at(0).size() && y >= 0 && y < input.size()) {
-        return input.at(y).at(x).type == TileType::FULL;
-    }
-    return false;
+    return IsTile(input, x, y, TileType::FULL);
 }
 
 TileType ComputeNewValue(const std::vector<std::vector<Tile>>& input, int x, int y) {
+
     Tile current_tile = input.at(y).at(x);
     TileType current_type = current_tile.type;
     int surrounding_full_chairs = 0;
