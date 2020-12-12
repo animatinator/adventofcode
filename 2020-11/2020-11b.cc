@@ -76,15 +76,6 @@ int GetDistanceToNearestChairInDirection(std::vector<std::vector<Tile>>& grid, i
 }
 
 void SetNearestNeighbourChairs(std::vector<std::vector<Tile>>& grid) {
-    // Start out with every grid square looking at its immediate neighbours.
-    for (int x = 0; x < grid.at(0).size(); ++x) {
-        for (int y = 0; y < grid.size(); ++y) {
-            for (const auto& [direction, offset] : kDirectionsMap) {
-                grid.at(y).at(x).nearest_chair[direction] = 1000;
-            }
-        }
-    }
-
     // Top-left to bottom-right pass looking for left, topleft, top and topright nearest chairs.
     for (int y = 0; y < grid.size(); ++y) {
         for (int x = 0; x < grid.at(0).size(); ++x) {
