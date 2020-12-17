@@ -104,7 +104,7 @@ bool ValueMeetsConstraint(const int value, const Constraint& constraint) {
 }
 
 int CountScanErrors(const std::vector<int>& ticket, const std::vector<Constraint>& constraints) {
-    int errors = 0;
+    bool errors = false;
 
     for (const int value : ticket) {
         auto found = std::find_if(
@@ -113,7 +113,7 @@ int CountScanErrors(const std::vector<int>& ticket, const std::vector<Constraint
                 return ValueMeetsConstraint(value, c);
             });
         if (found == constraints.end()) {
-            errors += value;
+            errors = true;
         }
     }
 
@@ -237,18 +237,15 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Here's a massive hack:
-    // Extracted these numbers from the error message thrown by GetOrderedFieldNames, which did
-    // manage to find the positions of the 'departure' fields before it ran out of options.
-    long long test = 101LL*109LL*97LL*149LL*89LL*137LL;
-    std::cout << "Answer found by hackery: " << test << std::endl;
-
-    // And now, the unfinished code which may eventually find the right answer without crashing in
-    // the process.
     ProblemData data = ParseProblemData(std::string(argv[1]));
     FilterErroneousTickets(data.near_tickets, ConstraintsList(data));
     std::vector<std::string> ordered_field_names = GetOrderedFieldNames(data);
-    for (const auto& name : ordered_field_names) {
-        std::cout << name << std::endl;
+
+    long long multiplication = 1LL;
+    for (long long i = 0; i < ordered_field_names.size(); ++i) {
+        if (ordered_field_names.at(i).rfind("departure", 0) == 0) {
+            multiplication *= data.my_ticket.at(i);
+        }
     }
+    std::cout << "Multiplication result: " << multiplication << std::endl;
 }
