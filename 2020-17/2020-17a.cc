@@ -93,17 +93,23 @@ class ConwayCube {
         cube_.at(real_z).at(real_y).at(real_x) = value;
     }
 
+    int CountNeighbours(int x, int y, int z) const {
+        auto neighbours = GetNeighbours(x, y, z);
+        int active_neighbours = 0;
+        for (const auto& [n_x, n_y, n_z] : neighbours) {
+            if (IsFilled(n_x, n_y, n_z)) {
+                ++active_neighbours;
+            }
+        }
+
+        return active_neighbours;
+    }
+
     void UpdateFromPreviousCube(const ConwayCube& previous) {
         for (int z = z_bounds_.low; z <= z_bounds_.high; ++z) {
             for (int y = y_bounds_.low; y <= y_bounds_.high; ++y) {
                 for (int x = x_bounds_.low; x < x_bounds_.high; ++x) {
-                    auto neighbours = GetNeighbours(x, y, z);
-                    int active_neighbours = 0;
-                    for (const auto& [n_x, n_y, n_z] : neighbours) {
-                        if (previous.IsFilled(n_x, n_y, n_z)) {
-                            ++active_neighbours;
-                        }
-                    }
+                    int active_neighbours = previous.CountNeighbours(x, y, z);
 
                     // If this voxel was previously filled...
                     if (previous.IsFilled(x, y, z)) {
@@ -139,6 +145,29 @@ class ConwayCube {
         }
 
         return result;
+    }
+
+    void DumpPlane(int plane) {
+        std::cout << "(" << x_bounds_.low << ", " << y_bounds_.low << ")" << std::endl;
+        for (const auto row : cube_.at(plane)) {
+            for (const auto col : row) {
+                if (col) {
+                    std::cout << "#";
+                } else {
+                    std::cout << ".";
+                }
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+    }
+
+    void Dump() {
+        for (int z = 0; z < z_bounds_.Size(); ++z) {
+            std::cout << "-- z = " << z - z_bounds_.low << std::endl;
+            DumpPlane(z);
+        }
+        std::cout << std::endl;
     }
 
   private:
@@ -213,8 +242,10 @@ ConwayCube EvaluateOneCycle(const ConwayCube& current) {
 
 int EvaluateSixCyclesAndCountActiveCubes(const ConwayCube& first_cube) {
     ConwayCube current = EvaluateOneCycle(first_cube);
+    current.Dump();
     for (int i = 0; i < 5; ++i) {
         current = EvaluateOneCycle(current);
+        current.Dump();
     }
     return current.CountActiveCubes();
 }
@@ -227,6 +258,8 @@ int main(int argc, char* argv[]) {
     }
 
     ConwayCube first_cube = ParseInitialCube(std::string(argv[1]));
+    first_cube.Dump();
+    std::cout << "Active neighbours at (0, 1, 0): " << first_cube.CountNeighbours(0, 1, 0) << std::endl;
     int active_after_six_cycles = EvaluateSixCyclesAndCountActiveCubes(first_cube);
     std::cout << "Active cubes after six cycles: " << active_after_six_cycles << std::endl;
 }
