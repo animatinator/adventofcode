@@ -108,7 +108,7 @@ class ConwayCube {
     void UpdateFromPreviousCube(const ConwayCube& previous) {
         for (int z = z_bounds_.low; z <= z_bounds_.high; ++z) {
             for (int y = y_bounds_.low; y <= y_bounds_.high; ++y) {
-                for (int x = x_bounds_.low; x < x_bounds_.high; ++x) {
+                for (int x = x_bounds_.low; x <= x_bounds_.high; ++x) {
                     int active_neighbours = previous.CountNeighbours(x, y, z);
 
                     // If this voxel was previously filled...
@@ -164,10 +164,10 @@ class ConwayCube {
 
     void Dump() {
         for (int z = 0; z < z_bounds_.Size(); ++z) {
-            std::cout << "-- z = " << z - z_bounds_.low << std::endl;
+            std::cout << "-- z = " << z + z_bounds_.low << std::endl;
             DumpPlane(z);
         }
-        std::cout << std::endl;
+        std::cout << std::endl << "--------------------" << std::endl << std::endl;
     }
 
   private:
@@ -242,10 +242,8 @@ ConwayCube EvaluateOneCycle(const ConwayCube& current) {
 
 int EvaluateSixCyclesAndCountActiveCubes(const ConwayCube& first_cube) {
     ConwayCube current = EvaluateOneCycle(first_cube);
-    current.Dump();
     for (int i = 0; i < 5; ++i) {
         current = EvaluateOneCycle(current);
-        current.Dump();
     }
     return current.CountActiveCubes();
 }
@@ -259,7 +257,6 @@ int main(int argc, char* argv[]) {
 
     ConwayCube first_cube = ParseInitialCube(std::string(argv[1]));
     first_cube.Dump();
-    std::cout << "Active neighbours at (0, 1, 0): " << first_cube.CountNeighbours(0, 1, 0) << std::endl;
     int active_after_six_cycles = EvaluateSixCyclesAndCountActiveCubes(first_cube);
     std::cout << "Active cubes after six cycles: " << active_after_six_cycles << std::endl;
 }
