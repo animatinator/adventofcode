@@ -11,7 +11,7 @@
 struct Bounds {
     Bounds(int bottom, int top): low(bottom), high(top), low_used(0), high_used(0) {}
 
-    int Size() { return (high + 1) - low; }
+    int Size() const { return (high + 1) - low; }
 
     // When a value has been set to true, use this to update the low_used and high_used bounds to
     // match.
@@ -22,7 +22,7 @@ struct Bounds {
 
     // Returns a set of bounds just big enough to cover all values currently enclosed with one
     // space of padding on each end.
-    Bounds CreateMinimalEnclosingBounds() {
+    Bounds CreateMinimalEnclosingBounds() const {
         return {low_used - 1, high_used + 1};
     }
 
@@ -54,7 +54,6 @@ bool InBounds(int value, Bounds bounds) {
 
 class ConwayCube {
   public:
-    // TODO(DO NOT SUBMIT): Make sure this is ultimately called using the filled bounds of the previous cube plus one.
     ConwayCube(Bounds b_x, Bounds b_y, Bounds b_z) : x_bounds_(b_x), y_bounds_(b_y), z_bounds_(b_z) {
         InitialiseZeroCube();
     }
@@ -124,6 +123,22 @@ class ConwayCube {
                 }
             }
         }
+    }
+
+    int CountActiveCubes() const {
+        int result = 0;
+
+        for (int z = 0; z < z_bounds_.Size(); ++z) {
+            for (int y = 0; y < y_bounds_.Size(); ++y) {
+                for (int x = 0; x < x_bounds_.Size(); ++x) {
+                    if (cube_.at(z).at(y).at(x)) {
+                        ++result;
+                    }
+                }
+            }
+        }
+
+        return result;
     }
 
   private:
@@ -196,6 +211,14 @@ ConwayCube EvaluateOneCycle(const ConwayCube& current) {
     return new_cube;
 }
 
+int EvaluateSixCyclesAndCountActiveCubes(const ConwayCube& first_cube) {
+    ConwayCube current = EvaluateOneCycle(first_cube);
+    for (int i = 0; i < 5; ++i) {
+        current = EvaluateOneCycle(current);
+    }
+    return current.CountActiveCubes();
+}
+
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
@@ -204,6 +227,6 @@ int main(int argc, char* argv[]) {
     }
 
     ConwayCube first_cube = ParseInitialCube(std::string(argv[1]));
-    first_cube = EvaluateOneCycle(first_cube);
-    std::cout << "Parsed a cube. Lowest Z: " << first_cube.GetZBounds().low << ", highest X: " << first_cube.GetXBounds().high << std::endl;
+    int active_after_six_cycles = EvaluateSixCyclesAndCountActiveCubes(first_cube);
+    std::cout << "Active cubes after six cycles: " << active_after_six_cycles << std::endl;
 }
