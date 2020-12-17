@@ -256,7 +256,6 @@ int main(int argc, char* argv[]) {
     }
 
     ConwayCube first_cube = ParseInitialCube(std::string(argv[1]));
-    first_cube.Dump();
     int active_after_six_cycles = EvaluateSixCyclesAndCountActiveCubes(first_cube);
     std::cout << "Active cubes after six cycles: " << active_after_six_cycles << std::endl;
 }
